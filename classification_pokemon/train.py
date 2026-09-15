@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 import copy
+from tqdm import tqdm
 
 
 def train(
@@ -18,14 +19,16 @@ def train(
     for i in range(epoch):
         model.train()
         train_loss = 0.0
-        for batch_image, batch_target in train_dataloader:
+
+        train_bar = tqdm(
+            train_dataloader,
+            desc=f"Epoch {i+1}/{epoch}"
+        )
+        for batch_image, batch_target in train_bar:
             batch_image = batch_image.to(device).float()
             batch_target = batch_target.to(device).long()
 
-            # print(batch_image.shape)
             output = model(batch_image)
-            # print(output.shape)
-            # print(batch_target.shape)
 
             loss = criterion(output,batch_target)
 
@@ -33,13 +36,20 @@ def train(
             loss.backward()
             optimizer.step()
 
+            train_bar.set_postfix(loss=loss.item())
             train_loss += loss.item()
 
         avg_train_loss = train_loss/len(train_dataloader)
 
         model.eval()
         val_loss = 0.0
-        for batch_image, batch_target in val_dataloader:
+
+        val_bar = tqdm(
+            val_dataloader,
+            desc=f"Epoch {i+1}/{epoch}"
+        )
+
+        for batch_image, batch_target in val_bar:
             batch_image = batch_image.to(device).float()
             batch_target = batch_target.to(device).long()
 
@@ -47,6 +57,7 @@ def train(
 
             loss = criterion(output, batch_target)
 
+            val_bar.set_postfix(loss=loss.item())
             val_loss += loss.item()
 
         avg_val_loss = train_loss/len(val_dataloader)
@@ -62,9 +73,9 @@ def train(
             if patience_counter == patience:
                 break
         
-        print("nb epoch", i)
-        print("Avg val loss",avg_val_loss)
-        print("Avg train loss",avg_train_loss)
+        # print("nb epoch", i)
+        # print("Avg val loss",avg_val_loss)
+        # print("Avg train loss",avg_train_loss)
 
     return (best_weights)
         

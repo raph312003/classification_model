@@ -1,0 +1,11 @@
+train_data : "pikatchu/"
+val_data : "rondoudou/"
+target_size: [128,128]
+normalization: "percentile"
+architecture: "cnn_classifier"
+batchsize: 4
+lr: 0.0001
+epoch: 1000
+early_stopping: 10
+criterion: "CrossEntropy"
+optimizer: "Adam"
