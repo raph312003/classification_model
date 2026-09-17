@@ -3,7 +3,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import torch
+import math
+import logging
+import torch
+import torch.nn as nn
 
+from pydantic import BaseModel, ConfigDict
+
+from monai.transforms import (
+    Compose,
+    RandAffined,
+    RandGaussianNoised,
+    RandAdjustContrastd,
+)
 
 def percentile(image:np.ndarray, normalization:str) -> np.ndarray :
     if normalization == "percentile":
@@ -82,10 +94,93 @@ class LoadingPreProcessing():
         # Label
         y = self.label[index]
 
+        print("Avant",X.shape)
         X_norm = percentile(X, self.normalization)
 
-        return torch.tensor(X_norm).unsqueeze(0), torch.tensor(y)
+        print("Après :", X_norm.shape)
 
 
-        
-        
+
+# DataAugmentation
+class AugmentationConfig(BaseModel):
+    """Data augmentation parameters."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # Spatial augmentation
+    do_affine_transform: bool = False
+    affine_transform_prob: float = 0.5 # proba 0.5
+    rotate_range: float = math.pi / 6 # rotation de 30 degré
+    scale_range: tuple[float, float] = (0.85, 1.15) # changement de taille 85% et 115%
+
+    # Gaussian noise
+    do_gaussian_noise: bool = False
+    gaussian_noise_prob: float = 0.2 # proba 0.2
+    gaussian_noise_mean: float = 0.0 # mean center around 0
+    gaussian_noise_std: float = 0.05 # std around 0.05
+
+    # Contrast adjustment
+    do_adjust_contrast: bool = False
+    adjust_contrast_prob: float = 0.2 # proba 0.2
+    contrast_gamma_range: tuple[float, float] = (0.8, 1.2) 
+    # gamma < 1 Image plus claire
+    # gamma > 1 Image plus sombre
+
+
+class DataAugmentor2D(nn.Module):
+    """2D image augmentation for classification."""
+
+    def __init__(
+        self,
+        config: AugmentationConfig | None = None,
+    ):
+        super().__init__()
+
+        cfg = config if config is not None else AugmentationConfig()
+
+        transforms = []
+
+        if cfg.do_affine_transform:
+            transforms.append(
+                RandAffined(
+                    keys=["image"],
+                    prob=cfg.affine_transform_prob,
+                    rotate_range=cfg.rotate_range,
+                    scale_range=cfg.scale_range,
+                    mode="bilinear",
+                    padding_mode="reflection",
+                )
+            )
+
+        if cfg.do_gaussian_noise:
+            transforms.append(
+                RandGaussianNoised(
+                    keys=["image"],
+                    prob=cfg.gaussian_noise_prob,
+                    mean=cfg.gaussian_noise_mean,
+                    std=cfg.gaussian_noise_std,
+                )
+            )
+
+        if cfg.do_adjust_contrast:
+            transforms.append(
+                RandAdjustContrastd(
+                    keys=["image"],
+                    prob=cfg.adjust_contrast_prob,
+                    gamma=cfg.contrast_gamma_range,
+                )
+            )
+
+        self.transforms = Compose(transforms)
+        # Compose : Pipeline to add different successive transform
+
+    def forward(
+        self,
+        input_tensor: torch.Tensor,
+    ) -> torch.Tensor:
+
+        data = {"image": input_tensor}
+
+        data = self.transforms(data)
+
+        return data["image"]

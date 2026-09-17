@@ -48,5 +48,25 @@ def test(
 
         plt.show()
 
+def graph_loss_epoch(list_avg_train_loss, list_avg_val_loss):
+    
+    plt.plot(
+        range(1, len(list_avg_train_loss)+1),
+        list_avg_train_loss,
+        color="blue",
+        label="Train loss"
+    )
 
-            
+    plt.plot(
+        range(1, len(list_avg_val_loss)+1),
+        list_avg_val_loss,
+        color="red",
+        label="Validation loss"
+
+    )
+    plt.ylabel("Avg loss")
+    plt.xlabel("Epochs")
+    plt.title("Avg loss/epoch")
+    plt.legend()
+    plt.show()
+                

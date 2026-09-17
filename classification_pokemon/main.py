@@ -1,8 +1,11 @@
-from classification_pokemon.preprocessing import dataLoading,LoadingPreProcessing
+from classification_pokemon.preprocessing import (
+    dataLoading, 
+    LoadingPreProcessing, 
+    DataAugmentor2D,
+    AugmentationConfig
+)
 from classification_pokemon.train import train
-from classification_pokemon.test import test
-from classification_pokemon.model.cnn_classifier import EncoderClassifier2D
-
+from classification_pokemon.test import test, graph_loss_epoch
 from torch.utils.data.dataloader import DataLoader
 from sklearn.model_selection import train_test_split
 import torch
@@ -33,7 +36,7 @@ def main():
 
     parser.add_argument("--training_config", type=Path, default=None)
     parser.add_argument("--network_config", type=Path, default=None)
-    # parser.add_argument("--data_augmentation", type=Path, default=None)
+    parser.add_argument("--data_augmentation", type=Path, default=None)
     args = parser.parse_args()  # Get args.training_config (Path/None) 
 
     # Load default training_config
@@ -73,10 +76,37 @@ def main():
         with args.network_config.open("r") as file:
             net_config = yaml.safe_load(file)
 
+    # Load default data_augmentation
+    default_data_augmentation_config_path = (
+        PROJECT_ROOT / "configs" / "augmentation" / "augmentation.yaml"
+    )
+    if not default_data_augmentation_config_path.exists():
+        LOGGER.error("Default data augmentation file not found at %s", default_data_augmentation_config_path)
+        sys.exit(1)
+    with default_data_augmentation_config_path.open("r") as file:
+        data_augmentation_config = yaml.safe_load(file)
+    
+    # If custom data augmentation config is provided, update default config with custom values
+    if args.data_augmentation is not None:
+        if not args.data_augmentation.exists():
+            LOGGER.error("Custom data_augmentation file not found at %s", args.data_augmentation)
+            sys.exit(1)
+        with args.data_augmentation.open("r") as file:
+            data_augmentation_config = yaml.safe_load(file)
+
+    # Data augmentation
+    if config["data_augmentation"]:
+        LOGGER.info("Using data augmentation")
+        augmentation_cfg = AugmentationConfig(**data_augmentation_config)
+        augmentor = DataAugmentor2D(config = augmentation_cfg)
+    else :
+        augmentor = None
+
     loader = dataLoading(
         folder_path_0 = config["train_data"],
         folder_path_1 = config["val_data"], 
-        target_size = config["target_size"]
+        target_size = config["target_size"],
+        conversion = config["conversion"]
     )
 
     X, y = loader._load_data()
@@ -126,15 +156,21 @@ def main():
             LOGGER.error("Unexpected criterion = %s", config["criterion"])
             sys.exit(1)
 
-    model_weights = train(
-        model=model,
+    model_weights, list_avg_train_loss, list_avg_val_loss = train(
+        model = model,
         device = device,
-        train_dataloader=train_dataloader,
-        val_dataloader=val_dataloader,
-        patience= config["early_stopping"],
-        epoch=config["epoch"],
-        criterion= criterion, 
-        optimizer= optimizer
+        train_dataloader = train_dataloader,
+        val_dataloader = val_dataloader,
+        patience = config["early_stopping"],
+        epoch = config["epoch"],
+        criterion = criterion, 
+        optimizer = optimizer,
+        augmentor = augmentor
+    )
+
+    graph_loss_epoch(
+        list_avg_train_loss, 
+        list_avg_val_loss
     )
 
     test(
