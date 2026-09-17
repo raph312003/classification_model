@@ -119,8 +119,8 @@ def main():
         stratify=y      
     )
 
-    train_dataset = LoadingPreProcessing(X_train, y_train, config["normalization"])
-    val_dataset = LoadingPreProcessing(X_val, y_val, config["normalization"])
+    train_dataset = LoadingPreProcessing(X_train, y_train, config["normalization"], config["conversion"])
+    val_dataset = LoadingPreProcessing(X_val, y_val, config["normalization"], config["conversion"])
 
     train_dataloader = DataLoader(train_dataset, config["batchsize"], shuffle = True)
     val_dataloader = DataLoader(val_dataset, config["batchsize"], shuffle = False)
@@ -133,6 +133,12 @@ def main():
         case "cnn_classifier":
             from classification_pokemon.model.cnn_classifier import EncoderClassifier2D
             model = EncoderClassifier2D
+        case "viT_classifier":
+            from classification_pokemon.model.viT_classifier import ViT
+            model = ViT
+        case "cnn_FT_efficient_net":
+            from classification_pokemon.model.cnn_FT_efficient_net import EfficientNetDevelopper
+            model = EfficientNetDevelopper
         case _:
             LOGGER.error("Unexpected architecture = %s", config["architecture"])
             sys.exit(1)

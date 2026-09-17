@@ -36,13 +36,16 @@ class dataLoading():
         self, 
         folder_path_0,
         folder_path_1, 
-        target_size = (200,200)
+        target_size = (200,200),
+        conversion = "L"
+        
     ):
         super().__init__()
 
         self.folder_path_0 = folder_path_0
         self.folder_path_1 = folder_path_1
         self.target_size = target_size
+        self.conversion = conversion
     
 
     def _load_data(self):
@@ -51,7 +54,7 @@ class dataLoading():
         
         for file_name in os.listdir(self.folder_path_0):
             file_path = os.path.join(self.folder_path_0, file_name)
-            image = Image.open(file_path).convert("L")
+            image = Image.open(file_path).convert(self.conversion)
             if self.target_size:
                 image = image.resize(self.target_size)
             image = np.array(image, dtype=np.uint8)
@@ -60,7 +63,7 @@ class dataLoading():
 
         for file_name in os.listdir(self.folder_path_1):
             file_path = os.path.join(self.folder_path_1, file_name)
-            image = Image.open(file_path).convert("L")
+            image = Image.open(file_path).convert(self.conversion)
             if self.target_size:
                 image = image.resize(self.target_size)
             image = np.array(image, dtype=np.uint8)
@@ -74,12 +77,14 @@ class LoadingPreProcessing():
     def __init__(self, 
         image : list, 
         label : list, 
-        normalization : str
+        normalization : str,
+        conversion: str
     ):
         super().__init__()
         self.normalization = normalization
         self.image = image
         self.label = label
+        self.conversion = conversion
         
     def __len__(self):
         return len(self.image)
@@ -96,9 +101,15 @@ class LoadingPreProcessing():
 
         print("Avant",X.shape)
         X_norm = percentile(X, self.normalization)
+        if self.conversion == "RGB":
+            X_norm = torch.tensor(X_norm, dtype=torch.float32)
+            X_norm = X_norm.permute(2, 0, 1)
+        else:
+            X_norm = torch.tensor(X_norm, dtype=torch.float32).unsqueeze(0)
 
         print("Après :", X_norm.shape)
 
+        return X_norm, torch.tensor(y)
 
 
 # DataAugmentation

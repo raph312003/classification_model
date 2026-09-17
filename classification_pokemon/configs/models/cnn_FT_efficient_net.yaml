@@ -1,0 +1,4 @@
+num_classes: 2
+hidden_layer1: 1280
+hidden_layer2: 256
+dropout: 0.45

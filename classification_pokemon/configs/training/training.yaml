@@ -9,3 +9,5 @@ epoch: 1000
 early_stopping: 10
 criterion: "CrossEntropy"
 optimizer: "Adam"
+data_augmentation: False
+conversion: "L" # ["L","RGB"]
