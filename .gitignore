@@ -30,6 +30,7 @@ MANIFEST
 *.docx
 *.json
 fichier_yaml/
+*.ipynb
 
 # PyInstaller
 #   Usually these files are written by a python script from a template
