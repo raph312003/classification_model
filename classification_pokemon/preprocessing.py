@@ -99,15 +99,12 @@ class LoadingPreProcessing():
         # Label
         y = self.label[index]
 
-        print("Avant",X.shape)
         X_norm = percentile(X, self.normalization)
         if self.conversion == "RGB":
             X_norm = torch.tensor(X_norm, dtype=torch.float32)
             X_norm = X_norm.permute(2, 0, 1)
         else:
             X_norm = torch.tensor(X_norm, dtype=torch.float32).unsqueeze(0)
-
-        print("Après :", X_norm.shape)
 
         return X_norm, torch.tensor(y)
 

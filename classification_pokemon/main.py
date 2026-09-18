@@ -5,7 +5,7 @@ from classification_pokemon.preprocessing import (
     AugmentationConfig
 )
 from classification_pokemon.train import train
-from classification_pokemon.test import test, graph_loss_epoch
+from classification_pokemon.test import test, graph_loss_epoch, save_model_weight
 from torch.utils.data.dataloader import DataLoader
 from sklearn.model_selection import train_test_split
 import torch
@@ -172,6 +172,11 @@ def main():
         criterion = criterion, 
         optimizer = optimizer,
         augmentor = augmentor
+    )
+
+    save_model_weight(
+        model_weights, 
+        config["architecture"]
     )
 
     graph_loss_epoch(

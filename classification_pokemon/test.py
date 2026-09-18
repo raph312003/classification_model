@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix,ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 import numpy as np
+import os 
 
 def test(
     device: torch.device,
@@ -69,4 +70,10 @@ def graph_loss_epoch(list_avg_train_loss, list_avg_val_loss):
     plt.title("Avg loss/epoch")
     plt.legend()
     plt.show()
+
+
+def save_model_weight(best_weights, architecture):
+    os.makedirs(f"model_weights/{architecture}", exist_ok=True)
+    torch.save(best_weights, f"model_weights/{architecture}/best_model.pth")
+
                 
