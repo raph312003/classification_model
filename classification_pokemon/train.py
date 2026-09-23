@@ -46,6 +46,8 @@ def train(
             train_bar.set_postfix(loss=loss.item())
             train_loss += loss.item()
 
+        avg_train_loss = train_loss/len(train_dataloader)
+        print(f"avg_train_loss {avg_train_loss:.6f}")
         list_avg_train_loss.append(train_loss/len(train_dataloader))
 
         model.eval()
@@ -67,7 +69,8 @@ def train(
             val_bar.set_postfix(loss=loss.item())
             val_loss += loss.item()
 
-        avg_val_loss = train_loss/len(val_dataloader)
+        avg_val_loss = val_loss/len(val_dataloader)
+        print(f"avg_val_loss {avg_val_loss:.6f}")
         list_avg_val_loss.append(avg_val_loss)
 
         if avg_val_loss < best_val_loss:

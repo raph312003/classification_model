@@ -76,4 +76,8 @@ def save_model_weight(best_weights, architecture):
     os.makedirs(f"model_weights/{architecture}", exist_ok=True)
     torch.save(best_weights, f"model_weights/{architecture}/best_model.pth")
 
+# def get_features_maps():
+
+# def display_feature_maps():
+
                 
