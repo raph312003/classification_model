@@ -32,6 +32,7 @@ MANIFEST
 fichier_yaml/
 *.ipynb
 *.pth
+*.sh
 
 # PyInstaller
 #   Usually these files are written by a python script from a template

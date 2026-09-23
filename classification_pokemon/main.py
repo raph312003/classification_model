@@ -37,7 +37,9 @@ def main():
     parser.add_argument("--training_config", type=Path, default=None)
     parser.add_argument("--network_config", type=Path, default=None)
     parser.add_argument("--data_augmentation", type=Path, default=None)
+    parser.add_argument("--architecture", type=str, default=None)
     args = parser.parse_args()  # Get args.training_config (Path/None) 
+    track_architecture = args.architecture
 
     # Load default training_config
     if not default_training_config_path.exists():
@@ -102,6 +104,11 @@ def main():
     else :
         augmentor = None
 
+    if track_architecture:
+        architecture = track_architecture
+    else:
+        architecture = config["architecture"]
+
     loader = dataLoading(
         folder_path_0 = config["train_data"],
         folder_path_1 = config["val_data"], 
@@ -128,7 +135,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     LOGGER.info("Running on device %s", device)
 
-    model_name = config["architecture"]
+    model_name = architecture
     match model_name:
         case "cnn_classifier":
             from classification_pokemon.model.cnn_classifier import EncoderClassifier2D
@@ -176,7 +183,7 @@ def main():
 
     save_model_weight(
         model_weights, 
-        config["architecture"]
+        architecture
     )
 
     graph_loss_epoch(
