@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os 
 
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+LOGGER = logging.getLogger(__name__)
+
 def test(
     device: torch.device,
     model: torch.nn.Module,
@@ -23,6 +29,9 @@ def test(
             batch_target = batch_target.to(device).float()
 
             output = model(batch_image)
+
+            if hasattr(output, "logits"):
+                output = output.logits
 
             predictions = torch.argmax(output, dim=1)
 
@@ -73,11 +82,12 @@ def graph_loss_epoch(list_avg_train_loss, list_avg_val_loss):
 
 
 def save_model_weight(best_weights, architecture):
+    LOGGER.info("Saving %s weights", architecture)
     os.makedirs(f"model_weights/{architecture}", exist_ok=True)
     torch.save(best_weights, f"model_weights/{architecture}/best_model.pth")
 
-# def get_features_maps():
+#def get_features_maps():
 
-# def display_feature_maps():
+#def display_feature_maps():
 
                 

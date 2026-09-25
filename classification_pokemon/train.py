@@ -37,6 +37,9 @@ def train(
 
             output = model(batch_image)
 
+            if hasattr(output, "logits"):
+                output = output.logits
+
             loss = criterion(output,batch_target)
 
             optimizer.zero_grad()
@@ -63,6 +66,9 @@ def train(
             batch_target = batch_target.to(device).long()
 
             output = model(batch_image)
+
+            if hasattr(output, "logits"):
+                output = output.logits
 
             loss = criterion(output, batch_target)
 

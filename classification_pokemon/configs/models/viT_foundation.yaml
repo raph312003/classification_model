@@ -1,0 +1,9 @@
+pretrained_model_name_or_path: 'google/vit-base-patch16-224'
+num_labels: 2
+ignore_mismatched_sizes: True
+id2label:
+  0: "pikachu"
+  1: "rondoudou"
+label2id:
+  pikachu: 0
+  rondoudou: 1

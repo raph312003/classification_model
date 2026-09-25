@@ -2,7 +2,8 @@ from classification_pokemon.preprocessing import (
     dataLoading, 
     LoadingPreProcessing, 
     DataAugmentor2D,
-    AugmentationConfig
+    AugmentationConfig,
+    ViTFoundationDataset
 )
 from classification_pokemon.train import train
 from classification_pokemon.test import test, graph_loss_epoch, save_model_weight
@@ -60,9 +61,15 @@ def main():
         with args.training_config.open("r") as file:
             config = yaml.safe_load(file)
 
+    # Get the right track_architecture
+    if track_architecture:
+        architecture = track_architecture
+    else:
+        architecture = config["architecture"]
+    
     # Load default net_config
     default_net_config_path = (
-        PROJECT_ROOT / "configs" / "models" / (config["architecture"].lower() + ".yaml")
+        PROJECT_ROOT / "configs" / "models" / (architecture + ".yaml")
     )
     if not default_net_config_path.exists():
         LOGGER.error("Default net config file not found at %s", default_net_config_path)
@@ -104,10 +111,32 @@ def main():
     else :
         augmentor = None
 
-    if track_architecture:
-        architecture = track_architecture
-    else:
-        architecture = config["architecture"]
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    LOGGER.info("Running on device %s", device)
+
+    
+    model_name = architecture
+    match model_name:
+        case "cnn_classifier":
+            from classification_pokemon.model.cnn_classifier import EncoderClassifier2D
+
+            model = EncoderClassifier2D(**net_config).to(device)
+        case "viT_classifier":
+            from classification_pokemon.model.viT_classifier import ViT
+
+            model = ViT(**net_config).to(device)
+        case "cnn_FT_efficient_net":
+            from classification_pokemon.model.cnn_FT_efficient_net import EfficientNetDevelopper
+
+            model = EfficientNetDevelopper(**net_config).to(device)
+        case "viT_foundation":
+            from transformers import ViTImageProcessor, ViTForImageClassification
+
+            processor = ViTImageProcessor.from_pretrained(net_config["pretrained_model_name_or_path"])
+            model = ViTForImageClassification.from_pretrained(**net_config).to(device)
+        case _:
+            LOGGER.error("Unexpected architecture = %s", config["architecture"])
+            sys.exit(1)
 
     loader = dataLoading(
         folder_path_0 = config["train_data"],
@@ -125,32 +154,15 @@ def main():
         random_state=42,
         stratify=y      
     )
-
-    train_dataset = LoadingPreProcessing(X_train, y_train, config["normalization"], config["conversion"])
-    val_dataset = LoadingPreProcessing(X_val, y_val, config["normalization"], config["conversion"])
+    if architecture != "viT_foundation":
+        train_dataset = LoadingPreProcessing(X_train, y_train, config["normalization"], config["conversion"])
+        val_dataset = LoadingPreProcessing(X_val, y_val, config["normalization"], config["conversion"])
+    else:
+        train_dataset = ViTFoundationDataset(X_train, y_train, processor)
+        val_dataset = ViTFoundationDataset(X_val, y_val, processor)
 
     train_dataloader = DataLoader(train_dataset, config["batchsize"], shuffle = True)
     val_dataloader = DataLoader(val_dataset, config["batchsize"], shuffle = False)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    LOGGER.info("Running on device %s", device)
-
-    model_name = architecture
-    match model_name:
-        case "cnn_classifier":
-            from classification_pokemon.model.cnn_classifier import EncoderClassifier2D
-            model = EncoderClassifier2D
-        case "viT_classifier":
-            from classification_pokemon.model.viT_classifier import ViT
-            model = ViT
-        case "cnn_FT_efficient_net":
-            from classification_pokemon.model.cnn_FT_efficient_net import EfficientNetDevelopper
-            model = EfficientNetDevelopper
-        case _:
-            LOGGER.error("Unexpected architecture = %s", config["architecture"])
-            sys.exit(1)
-
-    model = model(**net_config).to(device)
 
     # Choose the optimizer
     optimizer_name = config["optimizer"]

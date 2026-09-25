@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 
 from pydantic import BaseModel, ConfigDict
+from torch.utils.data import Dataset
 
 from monai.transforms import (
     Compose,
@@ -108,6 +109,36 @@ class LoadingPreProcessing():
 
         return X_norm, torch.tensor(y)
 
+
+class ViTFoundationDataset(Dataset):
+    def __init__(
+        self,
+        image,
+        label,
+        processor
+    ):
+        super().__init__()
+        self.image = image
+        self.label = label
+        self.processor = processor
+
+    def __len__(self):
+        return len(self.image)
+
+    def __getitem__(self, index):
+        if index < 0:
+            raise ValueError("Negative indices are not supported.")
+        # Image
+        X = self.image[index]
+        # Label
+        y = self.label[index]
+
+        X_norm = self.processor(
+            images = X, 
+            return_tensors = "pt"
+        )
+
+        return X_norm["pixel_values"].float().squeeze(0), torch.tensor(y, dtype=torch.long)
 
 # DataAugmentation
 class AugmentationConfig(BaseModel):
