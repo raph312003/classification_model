@@ -1,6 +1,6 @@
 train_data : "pikatchu/"
 val_data : "rondoudou/"
-target_size: [128,128]
+target_size: [224,224]
 normalization: "percentile"
 architecture: "cnn_classifier"
 batchsize: 4
